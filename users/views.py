@@ -22,11 +22,7 @@ class UsersViewSet(ModelViewSet):
 
         if self.action == "list":
             permission_classes = [IsAdminUser]
-        elif (
-            self.action == "create"
-            or self.action == "retrieve"
-            or self.action == "favs"
-        ):
+        elif self.action in ["create", "retrieve", "favs"]:
             permission_classes = [AllowAny]
         else:
             permission_classes = [IsSelf]
@@ -39,13 +35,12 @@ class UsersViewSet(ModelViewSet):
         if not username or not password:
             return Response(status=status.HTTP_400_BAD_REQUEST)
         user = authenticate(username=username, password=password)
-        if user is not None:
-            encoded_jwt = jwt.encode(
-                {"pk": user.pk}, settings.SECRET_KEY, algorithm="HS256"
-            )
-            return Response(data={"token": encoded_jwt, "id": user.pk})
-        else:
+        if user is None:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
+        encoded_jwt = jwt.encode(
+            {"pk": user.pk}, settings.SECRET_KEY, algorithm="HS256"
+        )
+        return Response(data={"token": encoded_jwt, "id": user.pk})
 
     @action(detail=True)
     def favs(self, request, pk):
